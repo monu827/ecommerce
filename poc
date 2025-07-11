@@ -1,0 +1,85 @@
+from time import sleep
+from random import random
+from threading import Thread
+from queue import Queue
+
+def producer(queue):
+    print('Producer: Running')
+    for i in range(10):
+        value = random()
+        sleep(value)
+        item = (i, value)
+        queue.put(item)
+        print(f'> Producer added {item}')
+    queue.put(None)  # Sentinel to signal the consumer to stop
+    print('Producer: Done')
+
+def consumer(queue):
+    print('Consumer: Running')
+    while True:
+        item = queue.get()
+        if item is None:
+            break
+        sleep(item[1])
+        print(f'> Consumer got {item}')
+    print('Consumer: Done')
+
+if __name__ == "__main__":
+    queue = Queue()
+    consumer_thread = Thread(target=consumer, args=(queue,))
+    producer_thread = Thread(target=producer, args=(queue,))
+
+    consumer_thread.start()
+    producer_thread.start()
+
+    producer_thread.join()
+    consumer_thread.join()
+
+    print("Queue-based Producer and Consumer finished.")
+import threading
+import time
+import random
+
+# Shared buffer and max size
+buffer = []
+MAX_SIZE = 5
+
+# Semaphores
+empty = threading.Semaphore(MAX_SIZE)  # Initially MAX_SIZE empty slots
+full = threading.Semaphore(0)          # Initially 0 full slots
+mutex = threading.Semaphore(1)         # Binary semaphore for mutual exclusion
+
+# Producer function
+def producer():
+    for i in range(10):
+        item = f"Item-{i}"
+        empty.acquire()                # Wait if buffer is full
+        mutex.acquire()                # Acquire lock for buffer access
+        buffer.append(item)
+        print(f"[Producer] Produced: {item}, Buffer: {buffer}")
+        mutex.release()                # Release lock
+        full.release()                 # Signal that an item is available
+        time.sleep(random.uniform(0.1, 0.5))
+
+# Consumer function
+def consumer():
+    for i in range(10):
+        full.acquire()                 # Wait if buffer is empty
+        mutex.acquire()                # Acquire lock for buffer access
+        item = buffer.pop(0)
+        print(f"[Consumer] Consumed: {item}, Buffer: {buffer}")
+        mutex.release()                # Release lock
+        empty.release()                # Signal that a slot is empty
+        time.sleep(random.uniform(0.1, 0.5))
+
+if __name__ == "__main__":/m
+    producer_thread = threading.Thread(target=producer)
+    consumer_thread = threading.Thread(target=consumer)
+
+    producer_thread.start()
+    consumer_thread.start()
+
+    producer_thread.join()
+    consumer_thread.join()
+
+    print("Semaphore-based Producer and Consumer finished.")
